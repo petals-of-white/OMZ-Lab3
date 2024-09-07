@@ -1,9 +1,7 @@
+-- Filters not implemented in HIP library, but required for lab assignment
 module Filters where
-import           Codec.BMP       (parseBMP)
 import           Data.List       (sort, transpose)
-import           Data.List.Split (chunksOf, divvy)
-import           Graphics.Gloss  (Picture, bitmapOfBMP)
-import           Graphics.Image  hiding (map, transpose, zipWith)
+import           Data.List.Split (divvy)
 
 listMedian :: Ord a => [a] -> a
 listMedian = (\sorted -> sorted !! (length sorted `div` 2)) . sort
@@ -31,26 +29,3 @@ weightedMedian weights =
     where
         radius = length weights `div` 2
         flattenedWeights = concat weights
-
--- | Фільтр Гауса
-gaussPicture :: Double -> Image VS Y Word16 -> Picture
-gaussPicture sigma = hipToGloss . normalize .  applyFilter (gaussianBlur sigma) . toDoubleI
-
--- | Оператор Превітта
-prewittPicture ::Image VS Y Word16 -> Picture
-prewittPicture = hipToGloss . normalize . prewittOperator . toDoubleI
-
--- | Зважений медіанний фільтр
-weightedMedianPicture :: [[Int]]  -> (Int, Int) -> [Word16]-> Picture
-weightedMedianPicture weights (_row, col) wordList =
-    let filtered = Filters.weightedMedian weights matrix
-
-    in
-        hipToGloss $ normalize $ toDoubleI (fromLists (map (map PixelY) filtered) :: Image VS Y Word16)
-    where matrix = chunksOf col wordList
-
-hipToGloss :: (Array arr cs e, Array arr RGB Double, ToRGB cs e, Writable (Image arr RGB Double) BMP)
- => Image arr cs e -> Picture
-hipToGloss hipImg =
-    let bmp = either (error . show) id $ parseBMP $ encode BMP [] $ toImageRGB hipImg
-    in bitmapOfBMP bmp
